@@ -1,4 +1,4 @@
-const fetch = require('node-fetch');
+const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 const Fuse = require('fuse.js');
 
 exports.handler = async function(event, context) {
@@ -12,6 +12,7 @@ exports.handler = async function(event, context) {
   }
 
   try {
+    const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
     const response = await fetch('https://od.moi.gov.tw/api/v1/rest/datastore/A01010000C-001277-053');
     const data = await response.json();
 
