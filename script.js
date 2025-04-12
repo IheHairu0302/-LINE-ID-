@@ -2,21 +2,7 @@ const checkButton = document.getElementById("checkButton");
 const lineIdInput = document.getElementById("lineIdInput");
 const resultArea = document.getElementById("resultArea");
 
-let fraudLineIds = []; // 先宣告一個空的陣列來存放載入的資料
-
-// 載入詐騙 LINE ID 資料
-fetch('Line ID.json')
-  .then(response => response.json())
-  .then(data => {
-    fraudLineIds = data; // 將解析後的 JSON 資料存放到 fraudLineIds 陣列中
-    console.log('詐騙 LINE ID 資料載入成功：', fraudLineIds); // 可以在控制台看到載入的資料
-  })
-  .catch(error => {
-    console.error('載入 JSON 資料時發生錯誤：', error);
-    showResult("載入詐騙資料時發生錯誤，請稍後再試。", "danger");
-  });
-
-// LINE ID 詐騙查詢功能
+// LINE ID 詐騙查詢功能 (修改後)
 checkButton.addEventListener("click", () => {
   const inputId = lineIdInput.value.trim().toLowerCase();
   if (!inputId) {
@@ -26,17 +12,29 @@ checkButton.addEventListener("click", () => {
 
   console.log('使用者輸入的 LINE ID (小寫)：', inputId);
 
-  const matched = fraudLineIds.find(record => {
-    const recordAccount = record["帳號"]?.toLowerCase();
-    console.log('正在比對的 JSON 帳號 (小寫)：', recordAccount);
-    return recordAccount === inputId;
-  });
+  // 發送請求到後端的 /search API
+  fetch(`http://localhost:3000/search?q=${inputId}`)
+    .then(response => response.json())
+    .then(results => {
+      console.log('後端回傳的搜尋結果：', results);
+      if (results && results.length > 0) {
+        let message = "";
+        const numberOfResultsToShow = Math.min(5, results.length); // 最多顯示 3 個結果
 
-  if (matched) {
-    showResult(`⚠️ 此 LINE ID (${inputId}) 已被通報為詐騙帳號！<br>通報日期：${matched["通報日期"]} <br>編號：${matched["編號"]}`, "danger");
-  } else {
-    showResult(`✅ 此 LINE ID (${inputId}) 未在詐騙名單中。請仍保持警覺。`, "success");
-  }
+        for (let i = 0; i < numberOfResultsToShow; i++) {
+          const match = results[i].item;
+          const score = results[i].score !== undefined ? `(相似度 ${(results[i].score).toFixed(2)})` : '(相似度資訊不可用)';
+          message += `⚠️ 可能的詐騙帳號 ${score}：${inputId} (相似結果：${match["帳號"]})<br>通報日期：${match["通報日期"]} <br>編號：${match["編號"]}<hr>`;
+        }
+        showResult(message, "danger");
+      } else {
+        showResult(`✅ 此 LINE ID (${inputId}) 未在詐騙名單中找到相似結果。請仍保持警覺。`, "success");
+      }
+    })
+    .catch(error => {
+      console.error('向伺服器發送搜尋請求時發生錯誤：', error);
+      showResult("搜尋時發生錯誤，請稍後再試。", "danger");
+    });
 });
 
 function showResult(message, type) {
