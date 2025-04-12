@@ -7,7 +7,7 @@ const Fuse = require('fuse.js');
 const app = express();
 
 // 讀取 Line ID.json 檔案 (假設它與你的 search.js 在同一個目錄下)
-const rawData = fs.readFileSync('./line id.json', 'utf8');
+const rawData = fs.readFileSync('/var/task/functions/line id.json', 'utf8');
 const lineIds = JSON.parse(rawData);
 
 // 設定 fuse.js 的選項
