@@ -16,7 +16,7 @@ checkButton.addEventListener("click", () => {
   showResult("🔍 搜尋中，請稍候...", "info");
 
   // 發送請求到後端的 /search API
-  fetch(`https://melodious-paletas-64f621.netlify.app/.netlify/functions/search?q=${inputId}`)
+  fetch(`http://localhost:3000/search?q=${inputId}`)
     .then(response => response.json())
     .then(results => {
       console.log('後端回傳的搜尋結果：', results);
