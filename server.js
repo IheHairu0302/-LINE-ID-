@@ -3,7 +3,7 @@ const cors = require('cors');
 const path = require('path');
 
 const app = express();
-const port = 3000; // 你可以選擇其他未被佔用的端口
+const port = process.env.PORT || 3000; // 你可以選擇其他未被佔用的端口
 
 // 使用 cors 中介層來允許所有來源的請求 (開發階段建議這樣做)
 app.use(cors());
