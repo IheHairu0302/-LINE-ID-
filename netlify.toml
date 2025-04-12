@@ -1,2 +1,6 @@
 [build]
-  functions = "netlify/functions"
+  publish = "."
+  functions = "functions"
+
+[dev]
+  framework = "#auto"

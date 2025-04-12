@@ -16,13 +16,13 @@ checkButton.addEventListener("click", () => {
   showResult("🔍 搜尋中，請稍候...", "info");
 
   // 發送請求到後端的 /search API
-  fetch(`http://localhost:3000/search?q=${inputId}`)
+  fetch(`/.netlify/functions/search?q=${inputId}`)
     .then(response => response.json())
     .then(results => {
       console.log('後端回傳的搜尋結果：', results);
       if (results && results.length > 0) {
         let message = "";
-        const numberOfResultsToShow = Math.min(5, results.length); // 最多顯示 5 個結果
+        const numberOfResultsToShow = Math.min(30, results.length); // 最多顯示 5 個結果
 
         for (let i = 0; i < numberOfResultsToShow; i++) {
           const match = results[i].item;
