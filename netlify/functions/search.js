@@ -7,7 +7,7 @@ const Fuse = require('fuse.js');
 const app = express();
 
 // 讀取 Line ID.json 檔案 (假設它在你的專案根目錄)
-const rawData = fs.readFileSync(path.join(__dirname, '../../line id.json'), 'utf8');
+const rawData = fs.readFileSync('/var/task/line id.json', 'utf8');
 const lineIds = JSON.parse(rawData);
 
 // 設定 fuse.js 的選項
