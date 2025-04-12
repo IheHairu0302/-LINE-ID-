@@ -1,57 +1,56 @@
-const express = require('express');
-const cors = require('cors');
-const path = require('path');
-const fs = require('fs');
+const fetch = require('node-fetch');
 const Fuse = require('fuse.js');
 
-const app = express();
+exports.handler = async function(event, context) {
+  const query = event.queryStringParameters.q;
 
-// ✅ 改這裡，避免硬編碼絕對路徑
-const rawData = fs.readFileSync(path.join(__dirname, 'line id.json'), 'utf8');
-const lineIds = JSON.parse(rawData);
+  if (!query) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: '請提供搜尋關鍵字' }),
+    };
+  }
 
+  try {
+    const response = await fetch('https://od.moi.gov.tw/api/v1/rest/datastore/A01010000C-001277-053');
+    const data = await response.json();
 
-// 設定 fuse.js 的選項
-const options = {
-  keys: ['帳號'],
-  threshold: 0.3,
-  minMatchCharLength: 1,
-};
+    if (data && data.result && data.result.records) {
+      const lineIds = data.result.records;
 
-// 建立 Fuse 實例
-const fuse = new Fuse(lineIds, options);
+      const options = {
+        keys: ['帳號'],
+        threshold: 0.3,
+        minMatchCharLength: 1,
+      };
 
-// 建立搜尋 API 路由
-app.get('/search', (req, res) => {
-  const query = req.query.q;
+      const fuse = new Fuse(lineIds, options);
 
-  if (!query) {
-    return res.status(400).json({ error: '請提供搜尋關鍵字' });
-  }
+      // 先檢查是否有完全相符的資料
+      const exactMatch = lineIds.find(item => item['帳號'].toLowerCase() === query.toLowerCase());
 
-  // 先檢查是否有完全相符的資料
-  const exactMatch = lineIds.find(item => item['帳號'].toLowerCase() === query.toLowerCase());
+      let results;
+      if (exactMatch) {
+        results = [{ item: exactMatch }];
+      } else {
+        results = fuse.search(query);
+      }
 
-  if (exactMatch) {
-    return res.json([{ item: exactMatch }]);
-  } else {
-    const results = fuse.search(query);
-    return res.json(results);
-  }
-});
-
-// Netlify Function 需要導出一個名為 handler 的異步函式
-exports.handler = async (event, context) => {
-  // 處理 CORS
-  const allowedOrigins = ['melodious-paletas-64f621.netlify.app', 'http://localhost:5500']; // 記得替換成你的實際網址
-  const origin = event.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    app.use(cors({ origin }));
-  } else {
-    app.use(cors()); // 允許所有來源，你可以根據需求調整
-  }
-
-  // 將 Express app 轉換為 Netlify Function
-  const server = require('serverless-http')(app);
-  return server(event, context);
+      return {
+        statusCode: 200,
+        body: JSON.stringify(results),
+      };
+    } else {
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: '無法從 API 取得資料' }),
+      };
+    }
+  } catch (error) {
+    console.error('呼叫 API 時發生錯誤:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: '呼叫 API 時發生錯誤' }),
+    };
+  }
 };
