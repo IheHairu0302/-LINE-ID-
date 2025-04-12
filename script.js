@@ -12,14 +12,17 @@ checkButton.addEventListener("click", () => {
 
   console.log('使用者輸入的 LINE ID (小寫)：', inputId);
 
+  // 顯示載入中訊息
+  showResult("🔍 搜尋中，請稍候...", "info");
+
   // 發送請求到後端的 /search API
-  fetch(`http://localhost:3000/search?q=${inputId}`)
+  fetch(`/api/search?q=${inputId}`)
     .then(response => response.json())
     .then(results => {
       console.log('後端回傳的搜尋結果：', results);
       if (results && results.length > 0) {
         let message = "";
-        const numberOfResultsToShow = Math.min(5, results.length); // 最多顯示 3 個結果
+        const numberOfResultsToShow = Math.min(5, results.length); // 最多顯示 5 個結果
 
         for (let i = 0; i < numberOfResultsToShow; i++) {
           const match = results[i].item;
@@ -33,7 +36,7 @@ checkButton.addEventListener("click", () => {
     })
     .catch(error => {
       console.error('向伺服器發送搜尋請求時發生錯誤：', error);
-      showResult("搜尋時發生錯誤，請稍後再試。", "danger");
+      showResult("🚫 搜尋時發生錯誤，請稍後再試。", "danger");
     });
 });
 
