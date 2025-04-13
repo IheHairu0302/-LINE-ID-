@@ -80,6 +80,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function updatePaginationButtons(results) {
     paginationDiv.innerHTML = ''; // 清空之前的分頁按鈕
     const totalPages = Math.ceil(results.length / resultsPerPage);
+    const maxVisiblePages = 7; // 設定最多顯示的頁碼按鈕數量
 
     if (totalPages > 1) {
       const nav = document.createElement('nav');
@@ -106,22 +107,62 @@ document.addEventListener('DOMContentLoaded', function() {
       ul.appendChild(prevLi);
 
       // 頁碼按鈕
-      for (let i = 1; i <= totalPages; i++) {
-        const pageLi = document.createElement('li');
-        pageLi.classList.add('page-item');
-        if (i === currentPage) {
-          pageLi.classList.add('active');
+      if (totalPages <= maxVisiblePages) {
+        // 總頁數不多於可顯示的頁碼數量，直接顯示所有頁碼
+        for (let i = 1; i <= totalPages; i++) {
+          const pageLi = createPageItem(i);
+          ul.appendChild(pageLi);
         }
-        const pageLink = document.createElement('a');
-        pageLink.classList.add('page-link');
-        pageLink.textContent = i;
-        pageLink.addEventListener('click', () => {
-          currentPage = i;
-          displayPage(allSearchResults, currentPage);
-          updatePaginationButtons(allSearchResults);
-        });
-        pageLi.appendChild(pageLink);
-        ul.appendChild(pageLi);
+      } else {
+        // 總頁數過多，需要判斷顯示部分頁碼
+        let startPage, endPage;
+
+        if (currentPage <= Math.ceil(maxVisiblePages / 2)) {
+          // 當前頁靠近開頭
+          startPage = 1;
+          endPage = maxVisiblePages - 1;
+        } else if (currentPage >= totalPages - Math.floor(maxVisiblePages / 2)) {
+          // 當前頁靠近結尾
+          startPage = totalPages - maxVisiblePages + 2;
+          endPage = totalPages;
+        } else {
+          // 當前頁在中間
+          startPage = currentPage - Math.floor(maxVisiblePages / 2);
+          endPage = currentPage + Math.floor(maxVisiblePages / 2);
+        }
+
+        // 顯示第一頁和省略符號
+        if (startPage > 1) {
+          ul.appendChild(createPageItem(1));
+          if (startPage > 2) {
+            const ellipsisLi = document.createElement('li');
+            ellipsisLi.classList.add('page-item', 'disabled');
+            const ellipsisSpan = document.createElement('span');
+            ellipsisSpan.classList.add('page-link');
+            ellipsisSpan.textContent = '...';
+            ellipsisLi.appendChild(ellipsisSpan);
+            ul.appendChild(ellipsisLi);
+          }
+        }
+
+        // 顯示中間的頁碼
+        for (let i = startPage; i <= endPage; i++) {
+          ul.appendChild(createPageItem(i));
+        }
+
+        // 顯示省略符號和最後一頁
+        if (endPage < totalPages) {
+          if (endPage < totalPages - 1) {
+            const ellipsisLi = document.createElement('li');
+            ellipsisLi.classList.add('page-item', 'disabled');
+            const ellipsisSpan = document.createElement('span');
+            ellipsisSpan.classList.add('page-link');
+            ellipsisSpan.textContent = '...';
+            ellipsisLi.appendChild(ellipsisSpan);
+            ul.appendChild(ellipsisLi);
+          }
+          ul.appendChild(createPageItem(totalPages));
+        }
       }
 
       // 下一頁按鈕
@@ -146,6 +187,24 @@ document.addEventListener('DOMContentLoaded', function() {
       nav.appendChild(ul);
       paginationDiv.appendChild(nav);
     }
+  }
+
+  function createPageItem(pageNumber) {
+    const pageLi = document.createElement('li');
+    pageLi.classList.add('page-item');
+    if (pageNumber === currentPage) {
+      pageLi.classList.add('active');
+    }
+    const pageLink = document.createElement('a');
+    pageLink.classList.add('page-link');
+    pageLink.textContent = pageNumber;
+    pageLink.addEventListener('click', () => {
+      currentPage = pageNumber;
+      displayPage(allSearchResults, currentPage);
+      updatePaginationButtons(allSearchResults);
+    });
+    pageLi.appendChild(pageLink);
+    return pageLi;
   }
 
   // 順序按鈕的點擊事件
