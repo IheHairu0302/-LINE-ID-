@@ -33,36 +33,35 @@ document.addEventListener('DOMContentLoaded', function() {
   function displayResults(results) {
     searchResultsDiv.innerHTML = '';
     let hasReportedAccount = false;
-
+    let ul = null;
+  
     if (results && results.length > 0) {
-      const ul = document.createElement('ul');
+      ul = document.createElement('ul');
       results.forEach(result => {
         const li = document.createElement('li');
         li.textContent = `帳號: ${result.item['帳號']}`;
         if (result.item['通報日期']) {
-          li.style.color = 'red'; // 如果存在 '通報日期'，設定為紅色
-          hasReportedAccount = true; // 標記找到了通報帳號
-        } else {
-          li.style.color = 'green'; // 如果不存在 '通報日期'，設定為綠色
+          hasReportedAccount = true; // 仍然需要追蹤是否有通報帳號
         }
         ul.appendChild(li);
       });
-
+  
+      searchResultsDiv.appendChild(ul);
+  
       if (hasReportedAccount) {
         const message = document.createElement('p');
         message.textContent = '以下是可能的通報帳號';
         searchResultsDiv.insertBefore(message, ul);
-        searchResultsDiv.style.backgroundColor = '#ffe0e0'; // 設定結果方框為淺紅色
+        searchResultsDiv.style.backgroundColor = '#ffe0e0';
       } else {
         const message = document.createElement('p');
         message.textContent = '您搜尋的帳號安全';
         searchResultsDiv.insertBefore(message, ul);
-        searchResultsDiv.style.backgroundColor = '#e0ffe0'; // 設定結果方框為淺綠色
+        searchResultsDiv.style.backgroundColor = '#e0ffe0';
       }
-      searchResultsDiv.appendChild(ul);
     } else {
       searchResultsDiv.innerHTML = '<p>沒有找到符合的結果</p>';
-      searchResultsDiv.style.backgroundColor = ''; // 沒有結果時清除背景顏色
+      searchResultsDiv.style.backgroundColor = '';
     }
   }
 
