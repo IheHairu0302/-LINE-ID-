@@ -18,7 +18,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const inputId = searchInput.value.trim().toLowerCase();
     if (inputId) {
       searchResultsDiv.classList.remove('d-none');
-      searchResultsDiv.innerHTML = '<p>搜尋中...</p>';
+      searchResultsDiv.innerHTML = `
+        <div style="background-color: #e0f7fa; border: 1px solid #80deea; padding: 10px; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #00838f;">
+          <i class="fas fa-search fa-sm" style="margin-right: 5px;"></i>
+          搜尋中...
+        </div>
+      `;
       fetch(`/.netlify/functions/search?q=${inputId}`)
         .then(response => response.json())
         .then(data => {
@@ -26,8 +31,12 @@ document.addEventListener('DOMContentLoaded', function() {
           currentPage = 1;
           if (allSearchResults.length === 0) {
             // 如果沒有找到任何結果，直接顯示安全訊息
-            searchResultsDiv.innerHTML = '<p>您搜尋的帳號暫時是安全的</p>';
-            searchResultsDiv.style.backgroundColor = '#e0ffe0'; // 綠色背景
+            searchResultsDiv.innerHTML = `
+              <div style="background-color: #e0ffe0; border: 1px solid #a5d6a7; padding: 10px; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #388e3c;">
+                <i class="fas fa-check-circle fa-sm" style="margin-right: 5px;"></i>
+                您搜尋的帳號暫時是安全的
+              </div>
+            `;
             paginationDiv.innerHTML = ''; // 清空分頁按鈕
           } else {
             displayPage(data, currentPage);
@@ -58,10 +67,29 @@ document.addEventListener('DOMContentLoaded', function() {
       ul = document.createElement('ul');
       pageResults.forEach(result => {
         const li = document.createElement('li');
-        li.textContent = `帳號: ${result.item['帳號']}`;
+        li.style.display = 'flex';
+        li.style.alignItems = 'center';
+        li.style.marginBottom = '8px';
+
+        const accountSpan = document.createElement('span');
+        accountSpan.textContent = `帳號: ${result.item['帳號']}`;
+        li.appendChild(accountSpan);
+
+        const statusIcon = document.createElement('i');
+        statusIcon.style.marginLeft = '10px';
+        statusIcon.style.fontSize = '1.2em'; // 調整大小
+
         if (result.item['通報日期']) {
+          statusIcon.className = 'fas fa-exclamation-triangle'; // 黃色驚嘆號
+          statusIcon.style.color = '#ffc107'; // 黃色
+          statusIcon.title = '可能為通報帳號'; // 添加標題
           hasReportedAccount = true;
+        } else {
+          statusIcon.className = 'fas fa-check-circle'; // 綠色打勾
+          statusIcon.style.color = '#28a745'; // 綠色
+          statusIcon.title = '帳號安全'; // 添加標題
         }
+        li.appendChild(statusIcon);
         ul.appendChild(li);
       });
 
@@ -71,17 +99,22 @@ document.addEventListener('DOMContentLoaded', function() {
         const message = document.createElement('p');
         message.textContent = '以下是可能的通報帳號';
         searchResultsDiv.insertBefore(message, ul);
-        searchResultsDiv.style.backgroundColor = '#ffe0e0';
+        searchResultsDiv.style.backgroundColor = '#ffe0e0'; // 淡紅色背景
       } else {
         const message = document.createElement('p');
         message.textContent = '您搜尋的帳號安全';
         searchResultsDiv.insertBefore(message, ul);
-        searchResultsDiv.style.backgroundColor = '#e0ffe0';
+        searchResultsDiv.style.backgroundColor = '#e0ffe0'; // 淡綠色背景
       }
     } else {
       // 如果當前頁面沒有結果，也顯示安全訊息
-      searchResultsDiv.innerHTML = '<p>您搜尋的帳號暫時是安全的</p>';
-      searchResultsDiv.style.backgroundColor = '#e0ffe0';
+      searchResultsDiv.innerHTML = `
+        <div style="background-color: #e0ffe0; border: 1px solid #a5d6a7; padding: 10px; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #388e3c;">
+          <i class="fas fa-check-circle fa-sm" style="margin-right: 5px;"></i>
+          您搜尋的帳號暫時是安全的
+        </div>
+      `;
+      searchResultsDiv.style.backgroundColor = ''; // 移除可能的背景色
     }
   }
 
