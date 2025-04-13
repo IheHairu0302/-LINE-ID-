@@ -45,11 +45,11 @@
             margin-top: 20px;
             border-radius: 4px;
         }
-        #stats-charts {
-            padding: 20px;
-            border: 1px solid #ced4da;
-            border-radius: 6px;
-            background-color: #f0f0f0; /* 更淺的灰色區塊背景 */
+        #sortButtons {
+            margin-top: 10px;
+        }
+        #sortButtons button {
+            margin-right: 5px;
         }
         #loadingText {
             font-style: italic;
@@ -67,25 +67,11 @@
                 <input type="text" id="lineIdInput" class="form-control" placeholder="請輸入 LINE ID">
                 <button id="checkButton" class="btn btn-primary">查詢</button>
             </div>
+            <div id="sortButtons">
+                <button id="sortAscending">順序</button>
+                <button id="sortDescending">倒序</button>
+            </div>
             <div id="resultArea" class="alert alert-secondary d-none"></div>
-        </section>
-
-        <section id="stats-charts">
-            <h2 class="h4 mb-3">詐騙犯罪統計圖表</h2>
-            <p class="text-muted" id="loadingText">(圖表資料載入中...)</p>
-
-            <div class="mb-5">
-                <canvas id="casesChart"></canvas>
-            </div>
-            <div class="mb-5">
-                <canvas id="peopleChart"></canvas>
-            </div>
-            <div class="mb-5">
-                <canvas id="seizedAmountChart"></canvas>
-            </div>
-            <div class="mb-5">
-                <canvas id="blockedAmountChart"></canvas>
-            </div>
         </section>
     </main>
 
