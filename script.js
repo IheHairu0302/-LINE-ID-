@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
   paginationDiv.id = 'pagination';
   searchResultsDiv.after(paginationDiv); // 將分頁容器放在結果區域下方
 
-  const resultsPerPage = 10; // 每頁顯示的結果數量
+  const resultsPerPage = 15; // 每頁顯示的結果數量
   let currentPage = 1;
   let allSearchResults = []; // 儲存所有搜尋結果
 
