@@ -85,25 +85,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-      searchResultsDiv.appendChild(ul);
-
-      if (hasReportedAccount) {
-        const message = document.createElement('p');
-        message.textContent = '以下是可能的通報帳號';
-        searchResultsDiv.insertBefore(message, ul);
-        searchResultsDiv.style.backgroundColor = '#ffe0e0';
-      } else {
-        const message = document.createElement('p');
-        message.textContent = '您搜尋的帳號安全';
-        searchResultsDiv.insertBefore(message, ul);
-        searchResultsDiv.style.backgroundColor = '#e0ffe0';
-      }
-    } else {
-      searchResultsDiv.innerHTML = '<p>沒有找到符合的結果</p>';
-      searchResultsDiv.style.backgroundColor = '';
-    }
-  }
-
   function updatePaginationButtons(results) {
     paginationDiv.innerHTML = ''; // 清空之前的分頁按鈕
     const totalPages = Math.ceil(results.length / resultsPerPage);
