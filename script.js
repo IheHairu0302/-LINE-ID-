@@ -23,9 +23,16 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
           allSearchResults = data;
-          currentPage = 1; // 每次新的搜尋都回到第一頁
-          displayPage(data, currentPage); // 顯示第一頁的結果
-          updatePaginationButtons(data); // 更新分頁按鈕
+          currentPage = 1;
+          if (allSearchResults.length === 0) {
+            // 如果沒有找到任何結果，直接顯示安全訊息
+            searchResultsDiv.innerHTML = '<p>您搜尋的帳號暫時是安全的</p>';
+            searchResultsDiv.style.backgroundColor = '#e0ffe0'; // 綠色背景
+            paginationDiv.innerHTML = ''; // 清空分頁按鈕
+          } else {
+            displayPage(data, currentPage);
+            updatePaginationButtons(data);
+          }
         })
         .catch(error => {
           console.error('向伺服器發送搜尋請求時發生錯誤：', error);
@@ -34,7 +41,7 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
       searchResultsDiv.classList.add('d-none');
       searchResultsDiv.innerHTML = '';
-      paginationDiv.innerHTML = ''; // 清空分頁按鈕
+      paginationDiv.innerHTML = '';
     }
   }
 
@@ -42,7 +49,7 @@ document.addEventListener('DOMContentLoaded', function() {
     searchResultsDiv.innerHTML = '';
     const startIndex = (page - 1) * resultsPerPage;
     const endIndex = startIndex + resultsPerPage;
-    const pageResults = results.slice(startIndex, endIndex); // 取得當前頁面的結果
+    const pageResults = results.slice(startIndex, endIndex);
 
     let hasReportedAccount = false;
     let ul = null;
@@ -57,6 +64,26 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         ul.appendChild(li);
       });
+
+      searchResultsDiv.appendChild(ul);
+
+      if (hasReportedAccount) {
+        const message = document.createElement('p');
+        message.textContent = '以下是可能的通報帳號';
+        searchResultsDiv.insertBefore(message, ul);
+        searchResultsDiv.style.backgroundColor = '#ffe0e0';
+      } else {
+        const message = document.createElement('p');
+        message.textContent = '您搜尋的帳號安全';
+        searchResultsDiv.insertBefore(message, ul);
+        searchResultsDiv.style.backgroundColor = '#e0ffe0';
+      }
+    } else {
+      // 如果當前頁面沒有結果，也顯示安全訊息
+      searchResultsDiv.innerHTML = '<p>您搜尋的帳號暫時是安全的</p>';
+      searchResultsDiv.style.backgroundColor = '#e0ffe0';
+    }
+  }
 
       searchResultsDiv.appendChild(ul);
 
