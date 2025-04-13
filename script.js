@@ -37,6 +37,11 @@ document.addEventListener('DOMContentLoaded', function() {
       results.forEach(result => {
         const li = document.createElement('li');
         li.textContent = `帳號: ${result.item['帳號']}`;
+        if (result.item['通報日期']) {
+          li.style.color = 'red'; // 如果存在 '通報日期'，設定為紅色
+        } else {
+          li.style.color = 'green'; // 如果不存在 '通報日期'，設定為綠色
+        }
         ul.appendChild(li);
       });
       searchResultsDiv.appendChild(ul);
