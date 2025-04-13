@@ -8,70 +8,71 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
    <style>
     body {
-      background-color: #f8f9fa;
-      color: #343a40;
-    }
-  
+        background-color: #f8f9fa;
+        color: #343a40;
+        }
+
     .container {
-      max-width: 800px;
-      background-color: #fff;
-      padding: 30px;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-      margin-top: 30px;
-      margin-bottom: 30px;
-    }
-  
+        max-width: 800px;
+        background-color: #fff;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        margin-top: 30px;
+        margin-bottom: 30px;
+        }
+
     h1 {
-      color: #007bff;
-      text-align: center;
-      margin-bottom: 25px;
-    }
-  
+        color: #007bff;
+        text-align: center;
+        margin-bottom: 25px;
+        }
+
     .h4 {
-      color: #28a745;
-      margin-bottom: 15px;
-    }
-  
+        color: #28a745;
+        margin-bottom: 15px;
+        }
+
     #line-checker {
-      margin-bottom: 20px;
-      padding: 20px;
-      border: 1px solid #ced4da;
-      border-radius: 6px;
-      background-color: #e9ecef;
-    }
-  
-    .input-group.mb-3 {
-      margin-bottom: 12px !important;
-    }
-  
-    #lineIdInput {
-      border-radius: 4px 0 0 4px;
-    }
-  
+        margin-bottom: 20px;
+        padding: 20px;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        background-color: #e9ecef;
+        }
+
+    .input-group {
+        margin-bottom: 0 !important; /* 移除多餘的間距 */
+        }
+
     #checkButton {
-      border-radius: 0 4px 4px 0;
-    }
-  
-    #resultArea {
-      margin-top: 15px;
-      padding: 12px 15px;
-      border-radius: 6px;
-      font-size: 0.95rem;
-    }
-  
+        border-radius: 0 4px 4px 0;
+        }
+
+    #lineIdInput {
+        border-radius: 4px 0 0 4px;
+        }
+
     #sortButtons {
-      margin-top: 8px;
-    }
-  
+        margin-top: 8px;
+        }
+
     #sortButtons button {
-      margin-right: 8px;
-    }
-  
+        margin-right: 4px; /* 原本是 8px，現在縮緊一點 */
+        }
+
+    #resultArea {
+        margin-top: 12px;
+        padding: 12px 15px;
+        border-radius: 6px;
+        font-size: 0.95rem;
+        }
+
     #loadingText {
-      font-style: italic;
-      color: #6c757d;
-    }
+        font-style: italic;
+        color: #6c757d;
+}
+
   </style>
   
 </head>
@@ -86,9 +87,10 @@
                 <button id="checkButton" class="btn btn-primary">查詢</button>
             </div>
             <div id="sortButtons">
-                <button id="sortAscending" class="btn btn-outline-secondary btn-sm">順序</button>
+                <button id="sortAscending" class="btn btn-outline-secondary btn-sm">順序</button>
                 <button id="sortDescending" class="btn btn-outline-secondary btn-sm">倒序</button>
-            </div>
+             </div>
+    
     
             <div id="resultArea" class="alert alert-secondary d-none"></div>
         </section>
