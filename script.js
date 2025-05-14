@@ -1038,3 +1038,5 @@ document.addEventListener('DOMContentLoaded', function() {
          countyDetailChartCanvas.chart = countyDetailChart;
     }
 } // end initTaiwanMap
+
+});
