@@ -631,11 +631,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
     function initTaiwanMap() {
-     // 確保地圖容器存在
-     if (!taiwanMapContainer) {
-         console.error("找不到地圖容器 (ID為 'taiwan-map-container')");
-         return;
-     }
+    // 確保地圖容器存在
+    if (!taiwanMapContainer) {
+        console.error("找不到地圖容器 (ID為 'taiwan-map-container')");
+        return;
+    }
 
     // 台灣地圖 TopoJSON 資料來源
     const taiwanMapUrl = 'https://raw.githubusercontent.com/g0v/twgeojson/master/json/twCounty2010.topo.json';
@@ -698,7 +698,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return Object.values(countyScamData[county]).reduce((a, b) => a + b, 0);
     };
 
-     // 計算縣市詐騙總數的最大值，用於顏色比例尺
+    // 計算縣市詐騙總數的最大值，用於顏色比例尺
     const allCountyTotals = Object.keys(countyScamData).map(getCountyScamTotal);
     const maxScamValue = allCountyTotals.length > 0 ? Math.max(...allCountyTotals) : 0;
 
@@ -709,12 +709,35 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 載入台灣地圖數據
     d3.json(taiwanMapUrl).then(function(topology) {
+        // *** 關鍵步驟：打印出 topology.objects 的內容來查看對象名稱 ***
+        console.log("TopoJSON 數據載入成功。請展開下方的物件，尋找包含地理數據的對象名稱，通常其下會有 'geometries' 屬性：", topology.objects);
+
+
         // 將 TopoJSON 轉換為 GeoJSON
-        // *** 修正點：直接指定包含縣市數據的對象名稱 ***
-        const geoJsonObjectName = 'twCounty2010'; // 通常這個檔案的縣市數據對象名稱是 'twCounty2010'
-        // 如果載入數據後發現對象名稱不是這個，您可能需要將上一行改為
-        // const geoJsonObjectName = Object.keys(topology.objects)[0]; console.log(topology.objects); // 查看並手動確認正確名稱
-        const taiwanGeoJson = topojson.feature(topology, topology.objects[geoJsonObjectName]);
+        // *** 修正點：請根據上面 console.log 的輸出，將 'twCounty2010' 替換為您實際看到的正確對象名稱！***
+        const geoJsonObjectName = 'twCounty2010'; // <-- ***請根據 console 輸出修改這裡！***
+
+
+        // ***添加檢查：確保指定的對象存在於 topology.objects 中***
+        if (!topology.objects || !topology.objects[geoJsonObjectName]) {
+             console.error(`TopoJSON 對象中找不到名稱為 "${geoJsonObjectName}" 的數據。請檢查 TopoJSON 檔案結構或您在 geoJsonObjectName 中指定的名稱是否正確。目前找到的對象名稱有:`, Object.keys(topology.objects));
+             // 在地圖容器中顯示錯誤訊息給使用者
+             if (taiwanMapContainer) {
+                 // 清空容器並顯示錯誤訊息
+                 taiwanMapContainer.innerHTML = `<div class="alert alert-danger" role="alert">無法找到地圖數據 (${geoJsonObjectName})，請檢查主控台獲取詳情。</div>`;
+             }
+             // 同時清空/隱藏縣市詳細資訊區域和圖表
+              if (countyInfoDiv) countyInfoDiv.innerHTML = '<div class="alert alert-secondary">無法載入地圖數據，無法查看縣市詳細資訊。</div>';
+              if (countyDetailChart) { countyDetailChart.destroy(); countyDetailChart = null; } // 銷毀舊圖表
+              if (countyDetailChartCanvas) countyDetailChartCanvas.style.display = 'none'; // 隱藏 canvas
+
+             return; // 數據無效，停止繪製地圖後續內容
+        }
+        // ***檢查結束***
+
+
+        const taiwanGeoJson = topojson.feature(topology, topology.objects[geoJsonObjectName]); // 現在應該會使用正確的對象名稱
+        console.log("轉換為 GeoJSON 成功，特徵數量 (未過濾):", taiwanGeoJson.features.length); // 查看轉換後的特徵數量
 
         // 繪製縣市
         svg.selectAll('path')
@@ -885,25 +908,19 @@ document.addEventListener('DOMContentLoaded', function() {
             .text('多');
 
     }).catch(error => {
-        console.error('載入台灣地圖數據時發生錯誤:', error);
+        console.error('載入台灣地圖數據或處理時發生錯誤:', error);
          // 確保 taiwanMapContainer 存在才修改其內容
          if (taiwanMapContainer) {
              // 清空容器並顯示錯誤訊息
-             taiwanMapContainer.innerHTML = '<div class="alert alert-danger">載入台灣地圖時發生錯誤，請稍後再試。</div>';
+             taiwanMapContainer.innerHTML = `<div class="alert alert-danger" role="alert">載入台灣地圖數據時發生錯誤：${error.message}</div>`;
          }
          // 如果地圖載入失敗，縣市詳細資訊區域也顯示相應訊息
-         if (countyInfoDiv) {
-              countyInfoDiv.innerHTML = '<div class="alert alert-secondary">地圖載入失敗，無法查看縣市詳細資訊。</div>';
-         }
-          // 銷毀詳細圖表 (如果存在)
-         if (countyDetailChart) {
-             countyDetailChart.destroy();
-             countyDetailChart = null;
-         }
-          // 隱藏 canvas 元素
-         if (countyDetailChartCanvas) {
-             countyDetailChartCanvas.style.display = 'none';
-         }
+         if (countyInfoDiv) countyInfoDiv.innerHTML = '<div class="alert alert-secondary">地圖載入失敗，無法查看縣市詳細資訊。</div>';
+         // 銷毀詳細圖表 (如果存在)
+         if (countyDetailChart) { countyDetailChart.destroy(); countyDetailChart = null; }
+         // 隱藏 canvas 元素
+         if (countyDetailChartCanvas) countyDetailChartCanvas.style.display = 'none';
+
     });
 
     // 更新縣市詳細資訊
