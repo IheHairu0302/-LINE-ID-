@@ -7,16 +7,17 @@
 
 # 這個區塊用來設定 HTTP 標頭
 [[headers]]
-  # 這個標頭會應用到網站的所有路徑
   for = "/*"
   [headers.values]
-    # 設定 Content-Security-Policy (修正了打字錯誤)
-    # 加入允許特定行內腳本雜湊值的設定
-    # 這應該會解決最後的 CSP 錯誤
-    Content-Security-Policy = "script-src 'self' 'wasm-unsafe-eval' 'inline-speculation-rules' 'sha256-kPx0AsF0oz2kKiZ875xSvv693TBHkQ/0SkMJZnnNpnQ=';"
+    # 設定 Content-Security-Policy
+    # 同時允許同源腳本、特定行內腳本雜湊值，以及 CDN 來源
+    Content-Security-Policy = "script-src 'self' 'wasm-unsafe-eval' 'inline-speculation-rules' 'sha256-kPx0AsF0oz2kKiZ875xSvv693TBHkQ/0SkMJZnnNpnQ=' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com;"
 
     # 這裡也可以加入其他的安全標頭，例如：
     # X-Frame-Options = "DENY"
     # X-Content-Type-Options = "nosniff"
     # Referrer-Policy = "strict-origin-when-cross-origin"
     # Permissions-Policy = "geolocation=(self), microphone=()" # 限制功能存取
+    # 如果你還有其他 CSP 指令（例如 style-src, img-src 等），也要一併加在這裡，用分號隔開
+    # 例如，style-src 也許需要 'unsafe-inline' 或 cdn 來源，取決於你的 style 寫在哪裡
+    # style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com;
