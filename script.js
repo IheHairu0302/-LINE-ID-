@@ -715,7 +715,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // 將 TopoJSON 轉換為 GeoJSON
         // *** 修正點：請根據上面 console.log 的輸出，將 'twCounty2010' 替換為您實際看到的正確對象名稱！***
-        const geoJsonObjectName = 'twCounty2010'; // <-- ***請根據 console 輸出修改這裡！***
+        const geoJsonObjectName = 'layer1'; // <-- ***請根據 console 輸出修改這裡！***
 
 
         // ***添加檢查：確保指定的對象存在於 topology.objects 中***
