@@ -7,18 +7,22 @@ document.addEventListener('DOMContentLoaded', function() {
     const paginationDiv = document.createElement('div'); // 創建分頁按鈕的容器
     paginationDiv.id = 'pagination';
     // 確保分頁容器在line-checker section內部，但可以彈性處理位置
+        // 確保分頁容器在line-checker section內部，但可以彈性處理位置
     const lineCheckerSection = document.getElementById('line-checker');
     if (lineCheckerSection) { // 確保lineCheckerSection存在
          lineCheckerSection.after(paginationDiv); // 將分頁容器放在結果區域下方
+    }
+    
     if (statisticsTabButton) {
         statisticsTabButton.addEventListener('shown.bs.tab', function (event) {
             if (!chartInitialized) {
                 loadScamTrendChart();
                 initTaiwanMap(); // 初始化台灣地圖
+                chartInitialized = true; // 標記為已初始化
             }
         });
     }
-}
+
 
 
     const resultsPerPage = 15; // 每頁顯示的結果數量
