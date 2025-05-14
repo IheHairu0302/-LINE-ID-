@@ -10,10 +10,10 @@
   # 這個標頭會應用到網站的所有路徑
   for = "/*"
   [headers.values]
-    # 設定 Content-Security-Policy
+    # 設定 Content-Security-Policy (修正了打字錯誤)
     # 加入允許特定行內腳本雜湊值的設定
     # 這應該會解決最後的 CSP 錯誤
-    Content-Security-Security Policy = "script-src 'self' 'wasm-unsafe-eval' 'inline-speculation-rules' 'sha256-kPx0AsF0oz2kKiZ875xSvv693TBHkQ/0SkMJZnnNpnQ=';"
+    Content-Security-Policy = "script-src 'self' 'wasm-unsafe-eval' 'inline-speculation-rules' 'sha256-kPx0AsF0oz2kKiZ875xSvv693TBHkQ/0SkMJZnnNpnQ=';"
 
     # 這裡也可以加入其他的安全標頭，例如：
     # X-Frame-Options = "DENY"
