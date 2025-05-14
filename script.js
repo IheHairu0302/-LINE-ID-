@@ -631,413 +631,410 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
     function initTaiwanMap() {
-         // 確保地圖容器存在
-         if (!taiwanMapContainer) {
-             console.error("找不到地圖容器 (ID為 'taiwan-map-container')");
-             return;
+     // 確保地圖容器存在
+     if (!taiwanMapContainer) {
+         console.error("找不到地圖容器 (ID為 'taiwan-map-container')");
+         return;
+     }
+
+    // 台灣地圖 TopoJSON 資料來源
+    const taiwanMapUrl = 'https://raw.githubusercontent.com/g0v/twgeojson/master/json/twCounty2010.topo.json';
+
+    // 模擬各縣市詐騙數據（實際應用中應從後端 API 獲取）
+    const countyScamData = {
+        '臺北市': { '111': 245, '112': 310, '113': 287, '114': 325 },
+        '新北市': { '111': 320, '112': 365, '113': 392, '114': 358 },
+        '桃園市': { '111': 180, '112': 210, '113': 245, '114': 278 },
+        '臺中市': { '111': 210, '112': 265, '113': 240, '114': 290 },
+        '臺南市': { '111': 160, '112': 185, '113': 205, '114': 230 },
+        '高雄市': { '111': 230, '112': 272, '113': 258, '114': 295 },
+        '基隆市': { '111': 85, '112': 92, '113': 87, '114': 95 },
+        '新竹縣': { '111': 75, '112': 90, '113': 110, '114': 120 },
+        '新竹市': { '111': 65, '112': 82, '113': 95, '114': 105 },
+        '苗栗縣': { '111': 60, '112': 75, '113': 85, '114': 92 },
+        '彰化縣': { '111': 105, '112': 118, '113': 125, '114': 140 },
+        '南投縣': { '111': 55, '112': 62, '113': 70, '114': 75 },
+        '雲林縣': { '111': 80, '112': 88, '113': 93, '114': 102 },
+        '嘉義縣': { '111': 70, '112': 78, '113': 82, '114': 88 },
+        '嘉義市': { '111': 45, '112': 52, '113': 58, '114': 63 },
+        '屏東縣': { '111': 95, '112': 112, '113': 120, '114': 132 },
+        '宜蘭縣': { '111': 60, '112': 72, '113': 80, '114': 87 },
+        '花蓮縣': { '111': 50, '112': 58, '113': 63, '114': 70 },
+        '臺東縣': { '111': 40, '112': 45, '113': 48, '114': 53 },
+        '澎湖縣': { '111': 20, '112': 23, '113': 25, '114': 28 },
+        '金門縣': { '111': 15, '112': 18, '113': 20, '114': 22 },
+        '連江縣': { '111': 5, '112': 7, '113': 8, '114': 9 }
+    };
+
+    // 設置地圖尺寸
+    const width = 400;
+    const height = 500;
+    let countyDetailChart = null; // 在這個作用域內聲明，用於存儲縣市詳細圖表的實例
+
+    // 創建 SVG 容器
+    // 確保在創建新的 SVG 之前清空容器，避免重複繪製
+    d3.select('#taiwan-map-container').select('svg').remove();
+    const svg = d3.select('#taiwan-map-container')
+        .append('svg')
+        .attr('width', width)
+        .attr('height', height)
+        .attr('viewBox', [0, 0, width, height])
+        .style('max-width', '100%')
+        .style('height', 'auto');
+
+    // 創建地圖投影
+    const projection = d3.geoMercator()
+        .center([121, 24]) // 台灣中心點大約經緯度
+        .scale(6000)  // 放大地圖
+        .translate([width / 2, height / 2]);
+
+    // 創建地理路徑生成器
+    const path = d3.geoPath()
+        .projection(projection);
+
+    // 定義顏色比例尺，根據詐騙數量決定顏色深淺
+    const getCountyScamTotal = county => {
+        if (!countyScamData[county]) return 0;
+        return Object.values(countyScamData[county]).reduce((a, b) => a + b, 0);
+    };
+
+     // 計算縣市詐騙總數的最大值，用於顏色比例尺
+    const allCountyTotals = Object.keys(countyScamData).map(getCountyScamTotal);
+    const maxScamValue = allCountyTotals.length > 0 ? Math.max(...allCountyTotals) : 0;
+
+
+    const colorScale = d3.scaleSequential()
+        .domain([0, maxScamValue])
+        .interpolator(d3.interpolateReds);
+
+    // 載入台灣地圖數據
+    d3.json(taiwanMapUrl).then(function(topology) {
+        // 將 TopoJSON 轉換為 GeoJSON
+        // *** 修正點：直接指定包含縣市數據的對象名稱 ***
+        const geoJsonObjectName = 'twCounty2010'; // 通常這個檔案的縣市數據對象名稱是 'twCounty2010'
+        // 如果載入數據後發現對象名稱不是這個，您可能需要將上一行改為
+        // const geoJsonObjectName = Object.keys(topology.objects)[0]; console.log(topology.objects); // 查看並手動確認正確名稱
+        const taiwanGeoJson = topojson.feature(topology, topology.objects[geoJsonObjectName]);
+
+        // 繪製縣市
+        svg.selectAll('path')
+            // *** 修正點：在這裡加入過濾，只繪製有 properties 和 name 的特徵 ***
+            .data(taiwanGeoJson.features.filter(d => d.properties && d.properties.name))
+            .enter()
+            .append('path')
+            .attr('d', path)
+            .attr('fill', d => {
+                const countyName = d.properties.name;
+                const scamTotal = getCountyScamTotal(countyName);
+                return colorScale(scamTotal);
+            })
+            .attr('stroke', '#fff')
+            .attr('stroke-width', 0.5)
+            .attr('class', 'county') // 添加 class 以便選中
+            .on('mouseover', function(event, d) {
+                d3.select(this)
+                    .attr('stroke', '#333')
+                    .attr('stroke-width', 1.5);
+
+                // 在地圖上顯示縣市名稱與詐騙數據總數
+                const countyName = d.properties.name;
+                const total = getCountyScamTotal(countyName);
+
+                // 移除任何現有的 tooltip
+                d3.selectAll('.tooltip').remove();
+
+                // 添加新的 tooltip
+                d3.select('#taiwan-map-container')
+                    .append('div')
+                    .attr('class', 'tooltip')
+                    .style('position', 'absolute')
+                    // 根據滑鼠位置調整 tooltip 位置，並考慮地圖容器的位置偏移
+                    // 這裡需要更穩定的位置計算，可以考慮使用 d3.pointer(event, this)
+                    // 或者簡單地相對 event.pageX/pageY，然後調整偏移
+                     .style('left', (event.pageX - (taiwanMapContainer.getBoundingClientRect().left || 0) + 15) + 'px')
+                     .style('top', (event.pageY - (taiwanMapContainer.getBoundingClientRect().top || 0) - 30) + 'px')
+                    .style('background-color', 'rgba(255, 255, 255, 0.9)')
+                    .style('border', '1px solid #ddd')
+                    .style('border-radius', '4px')
+                    .style('padding', '5px 8px')
+                    .style('font-size', '12px')
+                    .style('pointer-events', 'none') // 讓 tooltip 不會影響滑鼠事件
+                    .style('z-index', 100)
+                    .html(`<strong>${countyName}</strong>: ${total}件`);
+            })
+            .on('mouseout', function() {
+                // 只有當滑鼠移出縣市路徑時才移除 tooltip
+                 d3.select(this)
+                     .attr('stroke', '#fff')
+                     .attr('stroke-width', 0.5);
+
+                // 移除提示框
+                d3.selectAll('.tooltip').remove();
+            })
+            .on('click', function(event, d) {
+                const countyName = d.properties.name;
+                // 確保縣市名稱存在，避免傳遞 undefined
+                 if (countyName) {
+                     updateCountyInfo(countyName);
+                     showCountyDetailChart(countyName);
+
+                     // 高亮選中的縣市
+                     d3.selectAll('.county').attr('stroke', '#fff').attr('stroke-width', 0.5); // 移除所有縣市的高亮
+                     d3.select(this).attr('stroke', '#007bff').attr('stroke-width', 2); // 高亮當前選中的縣市
+                 } else {
+                     console.warn("點擊了沒有縣市名稱的區域:", d);
+                     // 可以選擇顯示一個預設或錯誤訊息
+                      if (countyInfoDiv) {
+                          countyInfoDiv.innerHTML = '<div class="alert alert-secondary">請在地圖上選擇一個縣市以查看詳細資訊</div>';
+                      }
+                       // 銷毀詳細圖表 (如果存在)
+                      if (countyDetailChart) {
+                          countyDetailChart.destroy();
+                          countyDetailChart = null;
+                      }
+                       // 隱藏 canvas 元素
+                      if (countyDetailChartCanvas) {
+                          countyDetailChartCanvas.style.display = 'none';
+                      }
+
+                 }
+            });
+
+        // 添加縣市名稱標籤
+        svg.selectAll('text')
+             // 綁定數據前，過濾掉沒有 properties 或 properties.name 的特徵
+             // 由於路徑已經過濾，這裡確保文字和路徑對應
+            .data(taiwanGeoJson.features.filter(d => d.properties && d.properties.name))
+            .enter()
+            .append('text')
+            // 計算 x, y 座標的程式碼不變
+            .attr('x', d => path.centroid(d)[0])
+            .attr('y', d => path.centroid(d)[1])
+            .attr('text-anchor', 'middle')
+            .attr('font-size', '8px')
+            .attr('pointer-events', 'none') // 讓文字不影響地圖的滑鼠事件
+            // 在使用縣市名稱前，先進行防禦性檢查
+            .attr('fill', d => {
+                // 檢查 properties 和 properties.name 是否存在
+                const countyName = (d.properties && d.properties.name) ? d.properties.name : null;
+                // 如果沒有名字或對應的統計數據，給一個預設顏色 (例如灰色)
+                if (!countyName || !countyScamData[countyName]) {
+                    return '#ccc'; // 灰色
+                }
+
+                const scamTotal = getCountyScamTotal(countyName);
+                // 根據詐騙總數決定文字顏色，如果背景顏色深，文字用白色
+                // 這裡簡單判斷，可以根據 colorScale 的輸出範圍調整閾值
+                return colorScale(scamTotal) > '#e0e0e0' ? '#333' : '#fff'; // 顏色越深，文字越傾向用白色
+            })
+            .text(d => {
+                 // 由於數據已經過濾，d.properties.name 確定存在了，可以直接使用
+                const name = d.properties.name;
+                return name.replace('臺', '台').replace('縣', '').replace('市', '');
+            });
+
+        // 添加圖例
+        const legendWidth = 180;
+        const legendHeight = 15;
+        const legend = svg.append('g')
+            .attr('transform', `translate(${width - legendWidth - 10}, ${height - 40})`);
+
+        // 創建漸變色標
+        // 移除舊的 defs 和 gradient 以防重複添加
+         svg.select('defs').remove();
+        const defs = svg.append('defs');
+        const linearGradient = defs.append('linearGradient')
+            .attr('id', 'scam-gradient')
+            .attr('x1', '0%')
+            .attr('y1', '0%')
+            .attr('x2', '100%')
+            .attr('y2', '0%');
+
+        linearGradient.append('stop')
+            .attr('offset', '0%')
+            .attr('stop-color', colorScale(0));
+
+        linearGradient.append('stop')
+            .attr('offset', '100%')
+            .attr('stop-color', colorScale(maxScamValue));
+
+        // 添加漸變色矩形
+        legend.append('rect')
+            .attr('width', legendWidth)
+            .attr('height', legendHeight)
+            .style('fill', 'url(#scam-gradient)');
+
+        // 添加圖例文字
+        legend.append('text')
+            .attr('x', 0)
+            .attr('y', -5)
+            .attr('font-size', '10px')
+            .text('詐騙案件數量');
+
+        legend.append('text')
+            .attr('x', 0)
+            .attr('y', legendHeight + 15)
+            .attr('font-size', '9px')
+            .text('少');
+
+        legend.append('text')
+            .attr('x', legendWidth)
+            .attr('y', legendHeight + 15)
+            .attr('text-anchor', 'end')
+            .attr('font-size', '9px')
+            .text('多');
+
+    }).catch(error => {
+        console.error('載入台灣地圖數據時發生錯誤:', error);
+         // 確保 taiwanMapContainer 存在才修改其內容
+         if (taiwanMapContainer) {
+             // 清空容器並顯示錯誤訊息
+             taiwanMapContainer.innerHTML = '<div class="alert alert-danger">載入台灣地圖時發生錯誤，請稍後再試。</div>';
          }
+         // 如果地圖載入失敗，縣市詳細資訊區域也顯示相應訊息
+         if (countyInfoDiv) {
+              countyInfoDiv.innerHTML = '<div class="alert alert-secondary">地圖載入失敗，無法查看縣市詳細資訊。</div>';
+         }
+          // 銷毀詳細圖表 (如果存在)
+         if (countyDetailChart) {
+             countyDetailChart.destroy();
+             countyDetailChart = null;
+         }
+          // 隱藏 canvas 元素
+         if (countyDetailChartCanvas) {
+             countyDetailChartCanvas.style.display = 'none';
+         }
+    });
 
-        // 台灣地圖 TopoJSON 資料來源
-        const taiwanMapUrl = 'https://raw.githubusercontent.com/g0v/twgeojson/master/json/twCounty2010.topo.json';
+    // 更新縣市詳細資訊
+    function updateCountyInfo(countyName) {
+        // 確保 countyInfoDiv 存在
+        if (!countyInfoDiv) return;
 
-        // 模擬各縣市詐騙數據（實際應用中應從後端 API 獲取）
-        const countyScamData = {
-            '臺北市': { '111': 245, '112': 310, '113': 287, '114': 325 },
-            '新北市': { '111': 320, '112': 365, '113': 392, '114': 358 },
-            '桃園市': { '111': 180, '112': 210, '113': 245, '114': 278 },
-            '臺中市': { '111': 210, '112': 265, '113': 240, '114': 290 },
-            '臺南市': { '111': 160, '112': 185, '113': 205, '114': 230 },
-            '高雄市': { '111': 230, '112': 272, '113': 258, '114': 295 },
-            '基隆市': { '111': 85, '112': 92, '113': 87, '114': 95 },
-            '新竹縣': { '111': 75, '112': 90, '113': 110, '114': 120 },
-            '新竹市': { '111': 65, '112': 82, '113': 95, '114': 105 },
-            '苗栗縣': { '111': 60, '112': 75, '113': 85, '114': 92 },
-            '彰化縣': { '111': 105, '112': 118, '113': 125, '114': 140 },
-            '南投縣': { '111': 55, '112': 62, '113': 70, '114': 75 },
-            '雲林縣': { '111': 80, '112': 88, '113': 93, '114': 102 },
-            '嘉義縣': { '111': 70, '112': 78, '113': 82, '114': 88 },
-            '嘉義市': { '111': 45, '112': 52, '113': 58, '114': 63 },
-            '屏東縣': { '111': 95, '112': 112, '113': 120, '114': 132 },
-            '宜蘭縣': { '111': 60, '112': 72, '113': 80, '114': 87 },
-            '花蓮縣': { '111': 50, '112': 58, '113': 63, '114': 70 },
-            '臺東縣': { '111': 40, '112': 45, '113': 48, '114': 53 },
-            '澎湖縣': { '111': 20, '112': 23, '113': 25, '114': 28 },
-            '金門縣': { '111': 15, '112': 18, '113': 20, '114': 22 },
-            '連江縣': { '111': 5, '112': 7, '113': 8, '114': 9 }
-        };
-
-        // 設置地圖尺寸
-        const width = 400;
-        const height = 500;
-        let countyDetailChart = null; // 在這個作用域內聲明，用於存儲縣市詳細圖表的實例
-
-        // 創建 SVG 容器
-        // 確保在創建新的 SVG 之前清空容器，避免重複繪製
-        d3.select('#taiwan-map-container').select('svg').remove();
-        const svg = d3.select('#taiwan-map-container')
-            .append('svg')
-            .attr('width', width)
-            .attr('height', height)
-            .attr('viewBox', [0, 0, width, height])
-            .style('max-width', '100%')
-            .style('height', 'auto');
-
-        // 創建地圖投影
-        const projection = d3.geoMercator()
-            .center([121, 24]) // 台灣中心點大約經緯度
-            .scale(6000)  // 放大地圖
-            .translate([width / 2, height / 2]);
-
-        // 創建地理路徑生成器
-        const path = d3.geoPath()
-            .projection(projection);
-
-        // 定義顏色比例尺，根據詐騙數量決定顏色深淺
-        const getCountyScamTotal = county => {
-            if (!countyScamData[county]) return 0;
-            return Object.values(countyScamData[county]).reduce((a, b) => a + b, 0);
-        };
-
-         // 計算縣市詐騙總數的最大值，用於顏色比例尺
-        const allCountyTotals = Object.keys(countyScamData).map(getCountyScamTotal);
-        const maxScamValue = allCountyTotals.length > 0 ? Math.max(...allCountyTotals) : 0;
-
-
-        const colorScale = d3.scaleSequential()
-            .domain([0, maxScamValue])
-            .interpolator(d3.interpolateReds);
-
-        // 載入台灣地圖數據
-        d3.json(taiwanMapUrl).then(function(topology) {
-            // 將 TopoJSON 轉換為 GeoJSON
-            // 假設 TopoJSON 的對象名稱是 'layer1' 或其他，請根據實際文件內容確認
-            const geoJsonObjectName = 'twCounty2010'; // 直接指定包含縣市數據的對象名稱
-        // 或者如果您想保險，也可以先 console.log(topology.objects) 查看確切名稱，再指定
-        // console.log("TopoJSON 中的對象:", topology.objects);
-        // const geoJsonObjectName = '您在 console 中看到的正確對象名稱';
-            const taiwanGeoJson = topojson.feature(topology, topology.objects[geoJsonObjectName]);
-
-            // 繪製縣市
-            svg.selectAll('path')
-                // *** 修正點：在這裡加入過濾，只繪製有 properties 和 name 的特徵 ***
-                .data(taiwanGeoJson.features.filter(d => d.properties && d.properties.name))
-                .enter()
-                .append('path')
-                .attr('d', path)
-                .attr('fill', d => {
-                    const countyName = d.properties.name;
-                    const scamTotal = getCountyScamTotal(countyName);
-                    return colorScale(scamTotal);
-                })
-                .attr('stroke', '#fff')
-                .attr('stroke-width', 0.5)
-                .attr('class', 'county') // 添加 class 以便選中
-                .on('mouseover', function(event, d) {
-                    d3.select(this)
-                        .attr('stroke', '#333')
-                        .attr('stroke-width', 1.5);
-
-                    // 在地圖上顯示縣市名稱與詐騙數據總數
-                    const countyName = d.properties.name;
-                    const total = getCountyScamTotal(countyName);
-
-                    // 移除任何現有的 tooltip
-                    d3.selectAll('.tooltip').remove();
-
-                    // 添加新的 tooltip
-                    d3.select('#taiwan-map-container')
-                        .append('div')
-                        .attr('class', 'tooltip')
-                        .style('position', 'absolute')
-                        // 根據滑鼠位置調整 tooltip 位置，並考慮地圖容器的位置偏移
-                        // 這裡需要更穩定的位置計算，可以考慮使用 d3.pointer(event, this)
-                        // 或者簡單地相對 event.pageX/pageY，然後調整偏移
-                         .style('left', (event.pageX - (taiwanMapContainer.getBoundingClientRect().left || 0) + 15) + 'px')
-                         .style('top', (event.pageY - (taiwanMapContainer.getBoundingClientRect().top || 0) - 30) + 'px')
-                        .style('background-color', 'rgba(255, 255, 255, 0.9)')
-                        .style('border', '1px solid #ddd')
-                        .style('border-radius', '4px')
-                        .style('padding', '5px 8px')
-                        .style('font-size', '12px')
-                        .style('pointer-events', 'none') // 讓 tooltip 不會影響滑鼠事件
-                        .style('z-index', 100)
-                        .html(`<strong>${countyName}</strong>: ${total}件`);
-                })
-                .on('mouseout', function() {
-                    // 只有當滑鼠移出縣市路徑時才移除 tooltip
-                     d3.select(this)
-                         .attr('stroke', '#fff')
-                         .attr('stroke-width', 0.5);
-
-                    // 移除提示框
-                    d3.selectAll('.tooltip').remove();
-                })
-                .on('click', function(event, d) {
-                    const countyName = d.properties.name;
-                    // 確保縣市名稱存在，避免傳遞 undefined
-                     if (countyName) {
-                         updateCountyInfo(countyName);
-                         showCountyDetailChart(countyName);
-
-                         // 高亮選中的縣市
-                         d3.selectAll('.county').attr('stroke', '#fff').attr('stroke-width', 0.5); // 移除所有縣市的高亮
-                         d3.select(this).attr('stroke', '#007bff').attr('stroke-width', 2); // 高亮當前選中的縣市
-                     } else {
-                         console.warn("點擊了沒有縣市名稱的區域:", d);
-                         // 可以選擇顯示一個預設或錯誤訊息
-                          if (countyInfoDiv) {
-                              countyInfoDiv.innerHTML = '<div class="alert alert-secondary">請在地圖上選擇一個縣市以查看詳細資訊</div>';
-                          }
-                           // 銷毀詳細圖表 (如果存在)
-                          if (countyDetailChart) {
-                              countyDetailChart.destroy();
-                              countyDetailChart = null;
-                          }
-                           // 隱藏 canvas 元素
-                          if (countyDetailChartCanvas) {
-                              countyDetailChartCanvas.style.display = 'none';
-                          }
-
-                     }
-                });
-
-            // 添加縣市名稱標籤
-            svg.selectAll('text')
-                 // 綁定數據前，過濾掉沒有 properties 或 properties.name 的特徵
-                 // 由於路徑已經過濾，這裡確保文字和路徑對應
-                .data(taiwanGeoJson.features.filter(d => d.properties && d.properties.name))
-                .enter()
-                .append('text')
-                // 計算 x, y 座標的程式碼不變
-                .attr('x', d => path.centroid(d)[0])
-                .attr('y', d => path.centroid(d)[1])
-                .attr('text-anchor', 'middle')
-                .attr('font-size', '8px')
-                .attr('pointer-events', 'none') // 讓文字不影響地圖的滑鼠事件
-                // 在使用縣市名稱前，先進行防禦性檢查
-                .attr('fill', d => {
-                    // 檢查 properties 和 properties.name 是否存在
-                    const countyName = (d.properties && d.properties.name) ? d.properties.name : null;
-                    // 如果沒有名字或對應的統計數據，給一個預設顏色 (例如灰色)
-                    if (!countyName || !countyScamData[countyName]) {
-                        return '#ccc'; // 灰色
-                    }
-
-                    const scamTotal = getCountyScamTotal(countyName);
-                    // 根據詐騙總數決定文字顏色，如果背景顏色深，文字用白色
-                    // 這裡簡單判斷，可以根據 colorScale 的輸出範圍調整閾值
-                    return colorScale(scamTotal) > '#e0e0e0' ? '#333' : '#fff'; // 顏色越深，文字越傾向用白色
-                })
-                .text(d => {
-                     // 由於數據已經過濾，d.properties.name 確定存在了，可以直接使用
-                    const name = d.properties.name;
-                    return name.replace('臺', '台').replace('縣', '').replace('市', '');
-                });
-
-            // 添加圖例
-            const legendWidth = 180;
-            const legendHeight = 15;
-            const legend = svg.append('g')
-                .attr('transform', `translate(${width - legendWidth - 10}, ${height - 40})`);
-
-            // 創建漸變色標
-            // 移除舊的 defs 和 gradient 以防重複添加
-             svg.select('defs').remove();
-            const defs = svg.append('defs');
-            const linearGradient = defs.append('linearGradient')
-                .attr('id', 'scam-gradient')
-                .attr('x1', '0%')
-                .attr('y1', '0%')
-                .attr('x2', '100%')
-                .attr('y2', '0%');
-
-            linearGradient.append('stop')
-                .attr('offset', '0%')
-                .attr('stop-color', colorScale(0));
-
-            linearGradient.append('stop')
-                .attr('offset', '100%')
-                .attr('stop-color', colorScale(maxScamValue));
-
-            // 添加漸變色矩形
-            legend.append('rect')
-                .attr('width', legendWidth)
-                .attr('height', legendHeight)
-                .style('fill', 'url(#scam-gradient)');
-
-            // 添加圖例文字
-            legend.append('text')
-                .attr('x', 0)
-                .attr('y', -5)
-                .attr('font-size', '10px')
-                .text('詐騙案件數量');
-
-            legend.append('text')
-                .attr('x', 0)
-                .attr('y', legendHeight + 15)
-                .attr('font-size', '9px')
-                .text('少');
-
-            legend.append('text')
-                .attr('x', legendWidth)
-                .attr('y', legendHeight + 15)
-                .attr('text-anchor', 'end')
-                .attr('font-size', '9px')
-                .text('多');
-
-        }).catch(error => {
-            console.error('載入台灣地圖數據時發生錯誤:', error);
-             // 確保 taiwanMapContainer 存在才修改其內容
-             if (taiwanMapContainer) {
-                 // 清空容器並顯示錯誤訊息
-                 taiwanMapContainer.innerHTML = '<div class="alert alert-danger">載入台灣地圖時發生錯誤，請稍後再試。</div>';
-             }
-             // 如果地圖載入失敗，縣市詳細資訊區域也顯示相應訊息
-             if (countyInfoDiv) {
-                  countyInfoDiv.innerHTML = '<div class="alert alert-secondary">地圖載入失敗，無法查看縣市詳細資訊。</div>';
-             }
-              // 銷毀詳細圖表 (如果存在)
-             if (countyDetailChart) {
-                 countyDetailChart.destroy();
-                 countyDetailChart = null;
-             }
-              // 隱藏 canvas 元素
-             if (countyDetailChartCanvas) {
-                 countyDetailChartCanvas.style.display = 'none';
-             }
-        });
-
-        // 更新縣市詳細資訊
-        function updateCountyInfo(countyName) {
-            // 確保 countyInfoDiv 存在
-            if (!countyInfoDiv) return;
-
-            if (!countyScamData[countyName]) {
-                countyInfoDiv.innerHTML = `<div class="alert alert-secondary" role="alert">找不到 ${countyName} 的詐騙資料。</div>`;
-                return;
-            }
-
-            const data = countyScamData[countyName];
-            const total = Object.values(data).reduce((a, b) => a + b, 0);
-            const years = Object.keys(data).sort(); // 獲取年份並排序
-             const latestYear = years.length > 0 ? years[years.length - 1] : 'N/A'; // 最新年份
-             const prevYear = years.length > 1 ? years[years.length - 2] : 'N/A'; // 前一年份
-
-            const latestData = data[latestYear] || 0;
-            const prevData = data[prevYear] || 0;
-
-             let changeRateText = '無前一年數據';
-             let changeClass = '';
-             let changeIcon = '';
-
-             if (prevData > 0) {
-                  const changeRate = ((latestData - prevData) / prevData * 100);
-                  changeRateText = `${Math.abs(changeRate).toFixed(1)}%`;
-                  if (changeRate > 0) {
-                      changeClass = 'text-danger'; // 增長用紅色
-                      changeIcon = '↑';
-                  } else if (changeRate < 0) {
-                       changeClass = 'text-success'; // 下降用綠色
-                       changeIcon = '↓';
-                  }
-             } else if (latestData > 0 && prevYear !== 'N/A') {
-                 // 如果去年是0，今年有數據
-                 changeRateText = '無限大';
-                 changeClass = 'text-danger';
-                 changeIcon = '↑';
-             } else if (latestData === 0 && prevData === 0) {
-                  // 如果去年和今年都是0
-                  changeRateText = '0%';
-             }
-
-
-            countyInfoDiv.innerHTML = `
-                 <h4>${countyName}</h4>
-                 <p><strong>總計 (歷年):</strong> ${total} 件</p>
-                 <p><strong>${latestYear} 年數據:</strong> ${latestData} 件</p>
-                 <p><strong>年增減 (${prevYear}-${latestYear}):</strong> <span class="${changeClass}">${changeRateText} ${changeIcon}</span></p>
-                 <p class="small text-muted">點擊縣市查看歷年趨勢圖</p>
-                 `;
-
-            // 如果你保留年度按鈕並想讓它們做其他事情，可以在這裡添加監聽器
-            // document.querySelectorAll('.year-btn').forEach(btn => { ... });
+        if (!countyScamData[countyName]) {
+            countyInfoDiv.innerHTML = `<div class="alert alert-secondary" role="alert">找不到 ${countyName} 的詐騙資料。</div>`;
+            return;
         }
 
-        // 顯示縣市詳細折線圖
-        function showCountyDetailChart(countyName) {
-            // 確保 countyDetailChartCanvas 存在
-            if (!countyDetailChartCanvas) return;
+        const data = countyScamData[countyName];
+        const total = Object.values(data).reduce((a, b) => a + b, 0);
+        const years = Object.keys(data).sort(); // 獲取年份並排序
+         const latestYear = years.length > 0 ? years[years.length - 1] : 'N/A'; // 最新年份
+         const prevYear = years.length > 1 ? years[years.length - 2] : 'N/A'; // 前一年份
 
-            if (!countyScamData[countyName]) {
-                 countyDetailChartCanvas.style.display = 'none'; // 隱藏 canvas
-                 // 在縣市資訊區域顯示錯誤訊息 (updateCountyInfo 已經處理)
-                 // updateCountyInfo(countyName);
-                 return;
-            }
+        const latestData = data[latestYear] || 0;
+        const prevData = data[prevYear] || 0;
 
-             countyDetailChartCanvas.style.display = 'block'; // 顯示 canvas
+         let changeRateText = '無前一年數據';
+         let changeClass = '';
+         let changeIcon = '';
 
-            const years = Object.keys(countyScamData[countyName]).sort(); // 獲取並排序年份
-            const data = years.map(year => countyScamData[countyName][year] || 0); // 獲取對應數據
+         if (prevData > 0) {
+              const changeRate = ((latestData - prevData) / prevData * 100);
+              changeRateText = `${Math.abs(changeRate).toFixed(1)}%`;
+              if (changeRate > 0) {
+                  changeClass = 'text-danger'; // 增長用紅色
+                  changeIcon = '↑';
+              } else if (changeRate < 0) {
+                   changeClass = 'text-success'; // 下降用綠色
+                   changeIcon = '↓';
+              }
+         } else if (latestData > 0 && prevYear !== 'N/A') {
+             // 如果去年是0，今年有數據
+             changeRateText = '無限大';
+             changeClass = 'text-danger';
+             changeIcon = '↑';
+         } else if (latestData === 0 && prevData === 0) {
+              // 如果去年和今年都是0
+              changeRateText = '0%';
+         }
 
-            // 銷毀先前的圖表實例（如果存在）
-            if (countyDetailChart) {
-                countyDetailChart.destroy();
-            }
 
-            // 建立新的折線圖
-            countyDetailChart = new Chart(countyDetailChartCanvas, {
-                type: 'line',
-                data: {
-                    labels: years.map(year => `${year} 年`), // X 軸標籤
-                    datasets: [{
-                        label: `${countyName} 詐騙案件數`,
-                        data: data,
-                        borderColor: 'rgb(75, 192, 192)',
-                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                        tension: 0.1,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: '案件數'
-                            },
-                            ticks: { // 確保 y 軸刻度是整數
-                                precision: 0
-                            }
+        countyInfoDiv.innerHTML = `
+             <h4>${countyName}</h4>
+             <p><strong>總計 (歷年):</strong> ${total} 件</p>
+             <p><strong>${latestYear} 年數據:</strong> ${latestData} 件</p>
+             <p><strong>年增減 (${prevYear}-${latestYear}):</strong> <span class="${changeClass}">${changeRateText} ${changeIcon}</span></p>
+             <p class="small text-muted">點擊縣市查看歷年趨勢圖</p>
+             `;
+
+        // 如果你保留年度按鈕並想讓它們做其他事情，可以在這裡添加監聽器
+        // document.querySelectorAll('.year-btn').forEach(btn => { ... });
+    }
+
+    // 顯示縣市詳細折線圖
+    function showCountyDetailChart(countyName) {
+        // 確保 countyDetailChartCanvas 存在
+        if (!countyDetailChartCanvas) return;
+
+        if (!countyScamData[countyName]) {
+             countyDetailChartCanvas.style.display = 'none'; // 隱藏 canvas
+             // 在縣市資訊區域顯示錯誤訊息 (updateCountyInfo 已經處理)
+             // updateCountyInfo(countyName);
+             return;
+        }
+
+         countyDetailChartCanvas.style.display = 'block'; // 顯示 canvas
+
+        const years = Object.keys(countyScamData[countyName]).sort(); // 獲取並排序年份
+        const data = years.map(year => countyScamData[countyName][year] || 0); // 獲取對應數據
+
+        // 銷毀先前的圖表實例（如果存在）
+        if (countyDetailChart) {
+            countyDetailChart.destroy();
+        }
+
+        // 建立新的折線圖
+        countyDetailChart = new Chart(countyDetailChartCanvas, {
+            type: 'line',
+            data: {
+                labels: years.map(year => `${year} 年`), // X 軸標籤
+                datasets: [{
+                    label: `${countyName} 詐騙案件數`,
+                    data: data,
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.1,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: '案件數'
                         },
-                        x: {
-                            title: {
-                                display: true,
-                                text: '年度'
+                        ticks: { // 確保 y 軸刻度是整數
+                            precision: 0
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: '年度'
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.parsed.y} 件`;
                             }
                         }
                     },
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return `${context.parsed.y} 件`;
-                                }
-                            }
-                        },
-                        title: {
-                            display: true,
-                            text: `${countyName} 歷年詐騙案件趨勢`
-                        }
+                    title: {
+                        display: true,
+                        text: `${countyName} 歷年詐騙案件趨勢`
                     }
                 }
-            });
-             // 將圖表實例存儲在 canvas 元素上 (以便銷毀)
-             countyDetailChartCanvas.chart = countyDetailChart;
-        }
-    } // end initTaiwanMap
-
-}); // end DOMContentLoaded
+            }
+        });
+         // 將圖表實例存儲在 canvas 元素上 (以便銷毀)
+         countyDetailChartCanvas.chart = countyDetailChart;
+    }
+} // end initTaiwanMap
