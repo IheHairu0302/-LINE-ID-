@@ -686,25 +686,36 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
 
             // 添加縣市名稱標籤
-            svg.selectAll('text')
-                .data(taiwanGeoJson.features)
-                .enter()
-                .append('text')
-                .attr('x', d => path.centroid(d)[0])
-                .attr('y', d => path.centroid(d)[1])
-                .attr('text-anchor', 'middle')
-                .attr('font-size', '8px')
-                .attr('fill', d => {
-                    const countyName = d.properties.name;
-                    const scamTotal = getCountyScamTotal(countyName);
-                    // 根據顏色深淺決定文字顏色
-                    return scamTotal > maxScamValue * 0.6 ? '#fff' : '#333';
-                })
-                .text(d => {
-                    const name = d.properties.name;
-                    // 縮短名稱顯示
-                    return name.replace('臺', '台').replace('縣', '').replace('市', '');
-                });
+        svg.selectAll('text')
+            // *** 修改點在這裡：在綁定數據之前，先過濾掉沒有 properties 或 properties.name 的特徵 ***
+            .data(taiwanGeoJson.features.filter(d => d.properties && d.properties.name))
+            .enter()
+            .append('text')
+            // 計算 x, y 座標的程式碼不變
+            .attr('x', d => path.centroid(d)[0])
+            .attr('y', d => path.centroid(d)[1])
+            .attr('text-anchor', 'middle')
+            .attr('font-size', '8px')
+            // 在使用縣市名稱前，先進行防禦性檢查
+            .attr('fill', d => {
+                // 檢查 properties 和 properties.name 是否存在
+                const countyName = (d.properties && d.properties.name) ? d.properties.name : null;
+                // 如果沒有名字或對應的統計數據，給一個預設顏色 (例如灰色)
+                if (!countyName || !countyScamData[countyName]) {
+                     // 這裡可以選擇印出警告，幫助你檢查是哪些地圖特徵沒有名字
+                     // console.warn("地圖特徵沒有 properties.name 或對應數據:", d);
+                     return '#ccc'; // 灰色
+                 }
+
+                const scamTotal = getCountyScamTotal(countyName);
+                // 根據詐騙總數決定文字顏色
+                return scamTotal > maxScamValue * 0.6 ? '#fff' : '#333';
+            })
+            .text(d => {
+                // 由於數據已經過濾，d.properties.name 確定存在了，可以直接使用
+                const name = d.properties.name;
+                return name.replace('臺', '台').replace('縣', '').replace('市', '');
+            });
 
             // 添加圖例
             const legendWidth = 180;
