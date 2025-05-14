@@ -711,7 +711,10 @@ document.addEventListener('DOMContentLoaded', function() {
         d3.json(taiwanMapUrl).then(function(topology) {
             // 將 TopoJSON 轉換為 GeoJSON
             // 假設 TopoJSON 的對象名稱是 'layer1' 或其他，請根據實際文件內容確認
-            const geoJsonObjectName = Object.keys(topology.objects)[0]; // 獲取第一個對象的名稱
+            const geoJsonObjectName = 'twCounty2010'; // 直接指定包含縣市數據的對象名稱
+        // 或者如果您想保險，也可以先 console.log(topology.objects) 查看確切名稱，再指定
+        // console.log("TopoJSON 中的對象:", topology.objects);
+        // const geoJsonObjectName = '您在 console 中看到的正確對象名稱';
             const taiwanGeoJson = topojson.feature(topology, topology.objects[geoJsonObjectName]);
 
             // 繪製縣市
