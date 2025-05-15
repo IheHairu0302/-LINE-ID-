@@ -742,12 +742,12 @@ document.addEventListener('DOMContentLoaded', function() {
         // 繪製縣市
         svg.selectAll('path')
             // *** 修正點：在這裡加入過濾，只繪製有 properties 和 name 的特徵 ***
-            .data(taiwanGeoJson.features.filter(d => d.properties && d.properties.name))
+            .data(taiwanGeoJson.features.filter(d => d.properties && d.properties.COUNTYNAME)) // <-- 将 .name 改为 .COUNTYNAME
             .enter()
             .append('path')
             .attr('d', path)
             .attr('fill', d => {
-                const countyName = d.properties.name;
+                const countyName = d.properties.COUNTYNAME; // <-- 将 .name 改为 .COUNTYNAME
                 const scamTotal = getCountyScamTotal(countyName);
                 return colorScale(scamTotal);
             })
@@ -760,7 +760,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     .attr('stroke-width', 1.5);
 
                 // 在地圖上顯示縣市名稱與詐騙數據總數
-                const countyName = d.properties.name;
+                const countyName =  d.properties.COUNTYNAME;
                 const total = getCountyScamTotal(countyName);
 
                 // 移除任何現有的 tooltip
@@ -795,7 +795,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 d3.selectAll('.tooltip').remove();
             })
             .on('click', function(event, d) {
-                const countyName = d.properties.name;
+                const countyName =  d.properties.COUNTYNAME;
                 // 確保縣市名稱存在，避免傳遞 undefined
                  if (countyName) {
                      updateCountyInfo(countyName);
@@ -827,7 +827,7 @@ document.addEventListener('DOMContentLoaded', function() {
         svg.selectAll('text')
              // 綁定數據前，過濾掉沒有 properties 或 properties.name 的特徵
              // 由於路徑已經過濾，這裡確保文字和路徑對應
-            .data(taiwanGeoJson.features.filter(d => d.properties && d.properties.name))
+            .data(taiwanGeoJson.features.filter(d => d.properties &&  d.properties.COUNTYNAME))
             .enter()
             .append('text')
             // 計算 x, y 座標的程式碼不變
@@ -839,7 +839,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // 在使用縣市名稱前，先進行防禦性檢查
             .attr('fill', d => {
                 // 檢查 properties 和 properties.name 是否存在
-                const countyName = (d.properties && d.properties.name) ? d.properties.name : null;
+                const countyName = (d.properties &&  d.properties.COUNTYNAME) ?  d.properties.COUNTYNAME : null;
                 // 如果沒有名字或對應的統計數據，給一個預設顏色 (例如灰色)
                 if (!countyName || !countyScamData[countyName]) {
                     return '#ccc'; // 灰色
@@ -851,8 +851,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 return colorScale(scamTotal) > '#e0e0e0' ? '#333' : '#fff'; // 顏色越深，文字越傾向用白色
             })
             .text(d => {
-                 // 由於數據已經過濾，d.properties.name 確定存在了，可以直接使用
-                const name = d.properties.name;
+                 // 由於數據已經過濾， d.properties.COUNTYNAME 確定存在了，可以直接使用
+                const name = d.properties.COUNTYNAME;
                 return name.replace('臺', '台').replace('縣', '').replace('市', '');
             });
 
