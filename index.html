@@ -88,9 +88,12 @@
     }
 
     /* Style for the map container */
-    #mapid {
-        height: 500px; /* Set a height for the map */
-        width: 100%; /* Make map fill container width */
+    #taiwan-map-container {
+        width: 100%; /* 讓地圖容器填滿父元素的寬度 */
+        height: auto; /* 讓地圖容器的高度根據內部 SVG 的大小自動調整 */
+        position: relative; /* 保留 position: relative 以便定位 tooltip */
+        /* 您可以選擇添加一個最小高度，防止它在內容很少時塌陷 */
+        min-height: 700px; /* 例如設定一個最小高度 */
     }
 
      </style>
@@ -143,7 +146,7 @@
     <hr class="my-4">
     
     <div class="row">
-        <div class="col-md-5">
+        <div class="col-md-12">
             <h3 class="h5 mb-3">縣市詐騙數據分布</h3>
             <div id="taiwan-map-container" style="height: 500px; position: relative;">
                 <!-- 台灣地圖將被 JavaScript 插入到這裡 -->
